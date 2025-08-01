@@ -34,7 +34,7 @@ A Safari extension that tracks the number of YouTube Shorts pages visited in a s
 3. **Configure Extension**:
    - **General Tab**: Set name, version, and description
    - **Permissions Tab**: Add "Access to websites" for `https://www.youtube.com/*`
-   - **Injected Content Tab**: Add content script from `content-safari.js`
+   - **Injected Content Tab**: Add content script from `content.js`
    - **Extension Website Tab**: Add popup HTML and script
 
 4. **Add Icons**:
@@ -91,11 +91,11 @@ A Safari extension that tracks the number of YouTube Shorts pages visited in a s
 
 ```
 safari-extension/
-├── manifest-safari.json  # Safari manifest
-├── content-safari.js     # Safari content script
-├── background-safari.js  # Safari background script
-├── popup-safari.html    # Safari popup interface
-├── popup-safari.js      # Safari popup functionality
+├── manifest.json  # Safari manifest
+├── content.js     # Safari content script
+├── background.js  # Safari background script
+├── popup.html    # Safari popup interface
+├── popup.js      # Safari popup functionality
 ├── icon16.png           # Extension icon (16x16)
 ├── icon48.png           # Extension icon (48x48)
 ├── icon128.png          # Extension icon (128x128)

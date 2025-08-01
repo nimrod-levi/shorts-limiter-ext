@@ -45,12 +45,12 @@
 3. **Injected Content Tab**:
    - Click **"+"** to add a new script
    - Name: `Content Script`
-   - Script: Copy the contents of `content-safari.js`
+   - Script: Copy the contents of `content.js`
    - Match Pattern: `https://www.youtube.com/shorts/*`
 
 4. **Extension Website Tab**:
-   - Add the popup HTML: Copy the contents of `popup-safari.html`
-   - Add the popup script: Copy the contents of `popup-safari.js`
+   - Add the popup HTML: Copy the contents of `popup.html`
+   - Add the popup script: Copy the contents of `popup.js`
 
 ### Step 5: Add Icons
 
@@ -100,12 +100,12 @@ Create a file called `Info.plist` with this content:
     <key>Chrome</key>
     <dict>
         <key>Global Page</key>
-        <string>background-safari.js</string>
+        <string>background.js</string>
         <key>Popovers</key>
         <array>
             <dict>
                 <key>Filename</key>
-                <string>popup-safari.html</string>
+                <string>popup.html</string>
                 <key>Height</key>
                 <integer>400</integer>
                 <key>Identifier</key>
@@ -134,7 +134,7 @@ Create a file called `Info.plist` with this content:
         <dict>
             <key>End</key>
             <array>
-                <string>content-safari.js</string>
+                <string>content.js</string>
             </array>
         </dict>
         <key>Whitelist</key>
@@ -169,10 +169,10 @@ Create a file called `Info.plist` with this content:
 ### Step 3: Copy Files
 
 Copy these files to the extension directory:
-- `content-safari.js`
-- `background-safari.js`
-- `popup-safari.html`
-- `popup-safari.js`
+- `content.js`
+- `background.js`
+- `popup.html`
+- `popup.js`
 - `icon16.png`
 - `icon48.png`
 - `icon128.png`

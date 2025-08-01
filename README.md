@@ -13,7 +13,7 @@ A cross-browser extension that tracks YouTube Shorts visits and notifies you whe
 ### Safari
 1. Enable Developer mode in Safari
 2. Use Safari Extension Builder or manual installation
-3. See [Safari Installation Guide](shared/SAFARI_INSTALLATION.md)
+3. See [Safari Installation Guide](safari-extension/SAFARI_INSTALLATION.md)
 
 ## 📁 Project Structure
 
