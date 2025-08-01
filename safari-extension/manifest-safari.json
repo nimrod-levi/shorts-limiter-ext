@@ -1,0 +1,34 @@
+{
+  "manifest_version": 2,
+  "name": "YouTube Shorts Limit Tracker",
+  "version": "1.0",
+  "description": "Tracks the number of YouTube Shorts pages visited and shows a popup when limit is reached",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "https://www.youtube.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/shorts/*"],
+      "js": ["content-safari.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "scripts": ["background-safari.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_popup": "popup-safari.html",
+    "default_title": "YouTube Shorts Tracker"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "web_accessible_resources": [
+    "popup-safari.html"
+  ]
+} 

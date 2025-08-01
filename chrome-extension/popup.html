@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Shorts Tracker</title>
+    <style>
+        body {
+            width: 320px;
+            min-height: 400px;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .stats-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transition: width 0.3s ease;
+        }
+
+        .settings-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .reset-btn {
+            background: rgba(255, 107, 107, 0.8);
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 107, 107, 1);
+        }
+
+        .session-time {
+            font-size: 12px;
+            opacity: 0.8;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📱 YouTube Shorts Tracker</h1>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-item">
+            <span>Shorts Visited:</span>
+            <span id="shorts-count">0</span>
+        </div>
+        <div class="stat-item">
+            <span>Limit:</span>
+            <span id="shorts-limit">10</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="stat-item">
+            <span>Remaining:</span>
+            <span id="shorts-remaining">10</span>
+        </div>
+    </div>
+
+    <div class="settings-container">
+        <div class="setting-item">
+            <label for="limit-input">Daily Limit:</label>
+            <input type="number" id="limit-input" min="1" max="100" value="10">
+        </div>
+        <button id="update-limit">Update Limit</button>
+    </div>
+
+    <button id="reset-session" class="reset-btn">Reset Session</button>
+
+    <div class="session-time" id="session-time"></div>
+
+    <script src="popup.js"></script>
+</body>
+</html> 
