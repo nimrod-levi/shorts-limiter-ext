@@ -126,29 +126,10 @@
             margin-top: 10px;
         }
 
-        .browser-info {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-            opacity: 0.7;
-        }
 
-        .compatibility-note {
-            font-size: 11px;
-            text-align: center;
-            opacity: 0.7;
-            margin-top: 5px;
-        }
     </style>
 </head>
 <body>
-    <div class="browser-info" id="browser-info">Cross-Browser</div>
-    
     <div class="header">
         <h1>📱 YouTube Shorts Tracker</h1>
     </div>
@@ -182,27 +163,8 @@
     <button id="reset-session" class="reset-btn">Reset Session</button>
 
     <div class="session-time" id="session-time"></div>
-    
-    <div class="compatibility-note">
-        ✓ Compatible with Chrome & Safari
-    </div>
 
-    <script>
-        // Update browser indicator based on detection
-        window.addEventListener('DOMContentLoaded', function() {
-            const browserInfo = document.getElementById('browser-info');
-            const isChrome = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
-            const isSafari = typeof safari !== 'undefined' || (isChrome && navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome'));
-            
-            if (isSafari) {
-                browserInfo.textContent = 'Safari';
-            } else if (isChrome) {
-                browserInfo.textContent = 'Chrome';
-            } else {
-                browserInfo.textContent = 'Browser';
-            }
-        });
-    </script>
+
     <script src="popup.js"></script>
 </body>
 </html>

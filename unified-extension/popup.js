@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     },
 
     set: function(data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         if (isChrome && chrome.storage.session) {
           // Chrome: Use session storage
           chrome.storage.session.set(data, () => {
@@ -74,9 +74,19 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
           // Safari/fallback: Use local storage with namespace
           chrome.storage.local.get(['youtubeShortsTracker'], (result) => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+              return;
+            }
             const existingData = result.youtubeShortsTracker || {};
             const updatedData = { ...existingData, ...data };
-            chrome.storage.local.set({ youtubeShortsTracker: updatedData }, () => resolve());
+            chrome.storage.local.set({ youtubeShortsTracker: updatedData }, () => {
+              if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+              } else {
+                resolve();
+              }
+            });
           });
         }
       });
@@ -121,16 +131,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let timeString = '';
         if (diffDays > 0) {
-          timeString = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+          timeString = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
         } else if (diffHours > 0) {
-          timeString = `${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+          timeString = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
         } else if (diffMins > 0) {
-          timeString = `${diffMins} minute${diffMins > 1 ? 's' : ''}`;
+          timeString = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
         } else {
           timeString = 'Just started';
         }
 
-        sessionTime.textContent = `Session started: ${timeString} ago`;
+        sessionTime.textContent = `Session started: ${timeString}`;
       }
     } catch (error) {
       console.error('Error loading stats:', error);
