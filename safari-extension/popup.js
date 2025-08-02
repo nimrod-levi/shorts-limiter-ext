@@ -10,36 +10,45 @@ document.addEventListener('DOMContentLoaded', function() {
   const resetSessionBtn = document.getElementById('reset-session');
   const sessionTime = document.getElementById('session-time');
 
-  // Safari-compatible storage functions
+  // Safari-compatible storage functions using extension storage API
   function getStorageData() {
-    try {
-      const data = localStorage.getItem('youtubeShortsTracker');
-      return data ? JSON.parse(data) : {
-        shortsVisited: [],
-        shortsLimit: 10,
-        sessionStartTime: Date.now()
-      };
-    } catch (error) {
-      console.error('Error reading storage:', error);
-      return {
-        shortsVisited: [],
-        shortsLimit: 10,
-        sessionStartTime: Date.now()
-      };
-    }
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+          const data = result.youtubeShortsTracker || {
+            shortsVisited: [],
+            shortsLimit: 10,
+            sessionStartTime: Date.now()
+          };
+          resolve(data);
+        });
+      } catch (error) {
+        console.error('Error reading storage:', error);
+        resolve({
+          shortsVisited: [],
+          shortsLimit: 10,
+          sessionStartTime: Date.now()
+        });
+      }
+    });
   }
 
   function setStorageData(data) {
-    try {
-      localStorage.setItem('youtubeShortsTracker', JSON.stringify(data));
-    } catch (error) {
-      console.error('Error writing storage:', error);
-    }
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.set({ youtubeShortsTracker: data }, function() {
+          resolve(true);
+        });
+      } catch (error) {
+        console.error('Error writing storage:', error);
+        resolve(false);
+      }
+    });
   }
 
   // Load and display current stats
-  function loadStats() {
-    const data = getStorageData();
+  async function loadStats() {
+    const data = await getStorageData();
     const visited = data.shortsVisited.length;
     const limit = data.shortsLimit;
     const remaining = Math.max(0, limit - visited);
@@ -88,12 +97,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Update limit
-  updateLimitBtn.addEventListener('click', function() {
+  updateLimitBtn.addEventListener('click', async function() {
     const newLimit = parseInt(limitInput.value);
     if (newLimit > 0 && newLimit <= 100) {
-      const data = getStorageData();
+      const data = await getStorageData();
       data.shortsLimit = newLimit;
-      setStorageData(data);
+      await setStorageData(data);
       loadStats(); // Reload stats to reflect new limit
       showNotification('Limit updated successfully!');
     } else {
@@ -102,12 +111,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Reset session
-  resetSessionBtn.addEventListener('click', function() {
+  resetSessionBtn.addEventListener('click', async function() {
     if (confirm('Are you sure you want to reset the current session? This will clear all tracked shorts.')) {
-      const data = getStorageData();
+      const data = await getStorageData();
       data.shortsVisited = [];
       data.sessionStartTime = Date.now();
-      setStorageData(data);
+      await setStorageData(data);
       loadStats(); // Reload stats
       showNotification('Session reset successfully!');
     }

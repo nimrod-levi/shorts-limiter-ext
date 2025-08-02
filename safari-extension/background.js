@@ -6,7 +6,7 @@
   function initializeExtension() {
     console.log('YouTube Shorts Limit Tracker extension installed');
     
-    // Initialize default settings in localStorage
+    // Initialize default settings using chrome.storage.local
     const defaultData = {
       shortsLimit: 10,
       sessionStartTime: Date.now(),
@@ -14,9 +14,11 @@
     };
     
     // Set default data if not already set
-    if (!localStorage.getItem('youtubeShortsTracker')) {
-      localStorage.setItem('youtubeShortsTracker', JSON.stringify(defaultData));
-    }
+    chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+      if (!result.youtubeShortsTracker) {
+        chrome.storage.local.set({ youtubeShortsTracker: defaultData });
+      }
+    });
   }
 
   // Handle extension icon click
@@ -31,9 +33,8 @@
   // Listen for messages from content scripts
   function handleMessage(request, sender, sendResponse) {
     if (request.action === 'getStats') {
-      try {
-        const data = localStorage.getItem('youtubeShortsTracker');
-        const parsedData = data ? JSON.parse(data) : {
+      chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+        const parsedData = result.youtubeShortsTracker || {
           shortsVisited: [],
           shortsLimit: 10,
           sessionStartTime: Date.now()
@@ -44,43 +45,30 @@
           shortsLimit: parsedData.shortsLimit || 10,
           sessionStartTime: parsedData.sessionStartTime || Date.now()
         });
-      } catch (error) {
-        console.error('Error getting stats:', error);
-        sendResponse({
-          shortsVisited: [],
-          shortsLimit: 10,
-          sessionStartTime: Date.now()
-        });
-      }
+      });
       return true; // Keep message channel open for async response
     }
     
     if (request.action === 'updateLimit') {
-      try {
-        const data = localStorage.getItem('youtubeShortsTracker');
-        const parsedData = data ? JSON.parse(data) : {};
+      chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+        const parsedData = result.youtubeShortsTracker || {};
         parsedData.shortsLimit = request.limit;
-        localStorage.setItem('youtubeShortsTracker', JSON.stringify(parsedData));
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error('Error updating limit:', error);
-        sendResponse({ success: false });
-      }
+        chrome.storage.local.set({ youtubeShortsTracker: parsedData }, function() {
+          sendResponse({ success: true });
+        });
+      });
       return true;
     }
     
     if (request.action === 'resetSession') {
-      try {
-        const data = localStorage.getItem('youtubeShortsTracker');
-        const parsedData = data ? JSON.parse(data) : {};
+      chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+        const parsedData = result.youtubeShortsTracker || {};
         parsedData.shortsVisited = [];
         parsedData.sessionStartTime = Date.now();
-        localStorage.setItem('youtubeShortsTracker', JSON.stringify(parsedData));
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error('Error resetting session:', error);
-        sendResponse({ success: false });
-      }
+        chrome.storage.local.set({ youtubeShortsTracker: parsedData }, function() {
+          sendResponse({ success: true });
+        });
+      });
       return true;
     }
   }

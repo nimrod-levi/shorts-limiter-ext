@@ -16,31 +16,40 @@
     return match ? match[1] : null;
   }
 
-  // Safari-compatible storage functions
+  // Safari-compatible storage functions using extension storage API
   function getStorageData() {
-    try {
-      const data = localStorage.getItem('youtubeShortsTracker');
-      return data ? JSON.parse(data) : {
-        shortsVisited: [],
-        shortsLimit: DEFAULT_LIMIT,
-        sessionStartTime: Date.now()
-      };
-    } catch (error) {
-      console.error('Error reading storage:', error);
-      return {
-        shortsVisited: [],
-        shortsLimit: DEFAULT_LIMIT,
-        sessionStartTime: Date.now()
-      };
-    }
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+          const data = result.youtubeShortsTracker || {
+            shortsVisited: [],
+            shortsLimit: DEFAULT_LIMIT,
+            sessionStartTime: Date.now()
+          };
+          resolve(data);
+        });
+      } catch (error) {
+        console.error('Error reading storage:', error);
+        resolve({
+          shortsVisited: [],
+          shortsLimit: DEFAULT_LIMIT,
+          sessionStartTime: Date.now()
+        });
+      }
+    });
   }
 
   function setStorageData(data) {
-    try {
-      localStorage.setItem('youtubeShortsTracker', JSON.stringify(data));
-    } catch (error) {
-      console.error('Error writing storage:', error);
-    }
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.set({ youtubeShortsTracker: data }, function() {
+          resolve(true);
+        });
+      } catch (error) {
+        console.error('Error writing storage:', error);
+        resolve(false);
+      }
+    });
   }
 
   // Create and show popup notification
@@ -112,7 +121,7 @@
   }
 
   // Track shorts visit
-  function trackShortsVisit() {
+  async function trackShortsVisit() {
     if (!isShortsPage()) return;
 
     const shortsId = getShortsId();
@@ -120,7 +129,7 @@
 
     try {
       // Get current session data
-      const data = getStorageData();
+      const data = await getStorageData();
       const shortsVisited = data.shortsVisited || [];
       const limit = data.shortsLimit || DEFAULT_LIMIT;
 
@@ -129,7 +138,7 @@
         shortsVisited.push(shortsId);
         
         // Save updated data
-        setStorageData({
+        await setStorageData({
           ...data,
           shortsVisited: shortsVisited,
           sessionStartTime: data.sessionStartTime || Date.now()
@@ -166,11 +175,11 @@
   }).observe(document, { subtree: true, childList: true });
 
   // Listen for messages from popup
-  window.addEventListener('message', function(event) {
+  window.addEventListener('message', async function(event) {
     if (event.source !== window) return;
     
     if (event.data.type === 'GET_STATS') {
-      const data = getStorageData();
+      const data = await getStorageData();
       window.postMessage({
         type: 'STATS_RESPONSE',
         data: data
@@ -178,9 +187,9 @@
     }
     
     if (event.data.type === 'UPDATE_LIMIT') {
-      const data = getStorageData();
+      const data = await getStorageData();
       data.shortsLimit = event.data.limit;
-      setStorageData(data);
+      await setStorageData(data);
       window.postMessage({
         type: 'LIMIT_UPDATED',
         success: true
@@ -188,10 +197,10 @@
     }
     
     if (event.data.type === 'RESET_SESSION') {
-      const data = getStorageData();
+      const data = await getStorageData();
       data.shortsVisited = [];
       data.sessionStartTime = Date.now();
-      setStorageData(data);
+      await setStorageData(data);
       window.postMessage({
         type: 'SESSION_RESET',
         success: true
