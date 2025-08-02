@@ -44,7 +44,7 @@
 
     popup.innerHTML = `
       <div style="display: flex; align-items: center; margin-bottom: 10px;">
-        <span style="font-size: 18px; font-weight: bold;">⚠️ Limit Reached!</span>
+        <span style="font-size: 36px; font-weight: bold;">⚠️ Limit Reached!</span>
         <button id="close-popup" style="margin-left: auto; background: none; border: none; color: white; font-size: 20px; cursor: pointer;">×</button>
       </div>
       <p style="margin: 0; line-height: 1.4;">
