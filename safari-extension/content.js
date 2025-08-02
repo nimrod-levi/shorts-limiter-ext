@@ -60,21 +60,21 @@
       right: 20px;
       background: #ff4444;
       color: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.4);
       z-index: 10000;
       font-family: Arial, sans-serif;
-      max-width: 300px;
+      max-width: 500px;
       animation: slideIn 0.3s ease-out;
     `;
 
     popup.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
         <span style="font-size: 36px; font-weight: bold;">⚠️ Limit Reached!</span>
-        <button id="close-popup" style="margin-left: auto; background: none; border: none; color: white; font-size: 20px; cursor: pointer;">×</button>
+        <button id="close-popup" style="margin-left: auto; background: none; border: none; color: white; font-size: 32px; cursor: pointer;">×</button>
       </div>
-      <p style="margin: 0; line-height: 1.4;">
+      <p style="margin: 0; line-height: 1.5; font-size: 18px;">
         You've reached your maximum number of YouTube Shorts for this session. 
         Consider taking a break!
       </p>
