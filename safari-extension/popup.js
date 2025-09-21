@@ -10,20 +10,38 @@ document.addEventListener('DOMContentLoaded', function() {
   const resetSessionBtn = document.getElementById('reset-session');
   const sessionTime = document.getElementById('session-time');
 
-  // Safari-compatible storage functions using extension storage API
+  // Safari-compatible storage functions using message passing to background script
   function getStorageData() {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
-          const data = result.youtubeShortsTracker || {
-            shortsVisited: [],
-            shortsLimit: 10,
-            sessionStartTime: Date.now()
-          };
-          resolve(data);
+        const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+        runtime.sendMessage({ action: 'getStats' }, function(response) {
+          if (chrome.runtime.lastError) {
+            resolve({
+              shortsVisited: [],
+              shortsLimit: 10,
+              sessionStartTime: Date.now()
+            });
+          } else if (response) {
+            resolve({
+              shortsVisited: response.shortsVisited || [],
+              shortsLimit: response.shortsLimit || 10,
+              sessionStartTime: response.sessionStartTime || Date.now()
+            });
+          } else {
+            // Fallback to direct storage access if message passing fails
+            const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+            storage.local.get(['youtubeShortsTracker'], function(result) {
+              const data = result.youtubeShortsTracker || {
+                shortsVisited: [],
+                shortsLimit: 10,
+                sessionStartTime: Date.now()
+              };
+              resolve(data);
+            });
+          }
         });
       } catch (error) {
-        console.error('Error reading storage:', error);
         resolve({
           shortsVisited: [],
           shortsLimit: 10,
@@ -33,15 +51,69 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function setStorageData(data) {
+  function updateLimit(newLimit) {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.set({ youtubeShortsTracker: data }, function() {
-          resolve(true);
+        const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+        runtime.sendMessage({ action: 'updateLimit', limit: newLimit }, function(response) {
+          if (chrome.runtime.lastError) {
+            resolve(false);
+          } else {
+            resolve(response && response.success);
+          }
         });
       } catch (error) {
-        console.error('Error writing storage:', error);
         resolve(false);
+      }
+    });
+  }
+
+  function resetSession() {
+    return new Promise((resolve) => {
+      try {
+        // Add timeout for message response
+        const timeout = setTimeout(() => {
+          // Fallback to direct storage access
+          const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+          storage.local.get(['youtubeShortsTracker'], function(result) {
+            const data = result.youtubeShortsTracker || {};
+            data.shortsVisited = [];
+            data.sessionStartTime = Date.now();
+            storage.local.set({ youtubeShortsTracker: data }, function() {
+              resolve(true);
+            });
+          });
+        }, 2000); // 2 second timeout
+        
+        const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+        runtime.sendMessage({ action: 'resetSession' }, function(response) {
+          clearTimeout(timeout);
+          if (chrome.runtime.lastError) {
+            // Fallback to direct storage access
+            const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+            storage.local.get(['youtubeShortsTracker'], function(result) {
+              const data = result.youtubeShortsTracker || {};
+              data.shortsVisited = [];
+              data.sessionStartTime = Date.now();
+              storage.local.set({ youtubeShortsTracker: data }, function() {
+                resolve(true);
+              });
+            });
+          } else {
+            resolve(response && response.success);
+          }
+        });
+      } catch (error) {
+        // Final fallback to direct storage access
+        const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+        storage.local.get(['youtubeShortsTracker'], function(result) {
+          const data = result.youtubeShortsTracker || {};
+          data.shortsVisited = [];
+          data.sessionStartTime = Date.now();
+          storage.local.set({ youtubeShortsTracker: data }, function() {
+            resolve(true);
+          });
+        });
       }
     });
   }
@@ -100,27 +172,28 @@ document.addEventListener('DOMContentLoaded', function() {
   updateLimitBtn.addEventListener('click', async function() {
     const newLimit = parseInt(limitInput.value);
     if (newLimit > 0 && newLimit <= 100) {
-      const data = await getStorageData();
-      data.shortsLimit = newLimit;
-      await setStorageData(data);
-      loadStats(); // Reload stats to reflect new limit
-      showNotification('Limit updated successfully!');
+      const success = await updateLimit(newLimit);
+      if (success) {
+        loadStats(); // Reload stats to reflect new limit
+        showNotification('Limit updated successfully!');
+      } else {
+        showNotification('Failed to update limit. Please try again.', 'error');
+      }
     } else {
       showNotification('Please enter a valid limit (1-100)', 'error');
     }
   });
 
-  // Reset session
   resetSessionBtn.addEventListener('click', async function() {
-    if (confirm('Are you sure you want to reset the current session? This will clear all tracked shorts.')) {
-      const data = await getStorageData();
-      data.shortsVisited = [];
-      data.sessionStartTime = Date.now();
-      await setStorageData(data);
+    const success = await resetSession();
+    if (success) {
       loadStats(); // Reload stats
       showNotification('Session reset successfully!');
+    } else {
+      showNotification('Failed to reset session. Please try again.', 'error');
     }
   });
+
 
   // Show notification
   function showNotification(message, type = 'success') {
@@ -177,11 +250,23 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load initial stats
   loadStats();
 
-  // Refresh stats every 5 seconds when popup is open
-  const refreshInterval = setInterval(loadStats, 5000);
+  // Listen for storage changes to update the popup in real-time
+  function setupStorageListener() {
+    try {
+      const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+      if (runtime && runtime.onMessage) {
+        // Listen for messages from background script about data changes
+        runtime.onMessage.addListener((message, sender, sendResponse) => {
+          if (message.action === 'dataUpdated') {
+            loadStats();
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Storage listener setup failed, using fallback');
+    }
+  }
 
-  // Clear interval when popup is closed
-  window.addEventListener('beforeunload', () => {
-    clearInterval(refreshInterval);
-  });
+  // Setup storage listener for real-time updates
+  setupStorageListener();
 }); 

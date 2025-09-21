@@ -91,8 +91,6 @@
     const shortsId = getShortsId();
     if (!shortsId) return;
 
-    console.log('🔍 Tracking shorts visit:', shortsId);
-
     try {
       // Send message to background script to track the visit
       const response = await chrome.runtime.sendMessage({ 
@@ -100,16 +98,13 @@
         shortsId: shortsId 
       });
       
-      console.log('📊 Background response:', response);
       
       if (response && response.limitReached) {
         showLimitPopup();
       }
 
-      // Log for debugging
-      console.log(`✅ Shorts visit tracked: ${shortsId}`);
     } catch (error) {
-      console.error('❌ Error tracking shorts visit:', error);
+      console.error('Error tracking shorts visit:', error);
     }
   }
 

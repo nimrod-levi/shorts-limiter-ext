@@ -2,10 +2,20 @@
 (function() {
   'use strict';
 
+  // Notify popup about data updates
+  function notifyPopupUpdate() {
+    try {
+      const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+      if (runtime && runtime.sendMessage) {
+        runtime.sendMessage({ action: 'dataUpdated' });
+      }
+    } catch (error) {
+      console.log('Failed to notify popup about data update');
+    }
+  }
+
   // Initialize extension when installed
   function initializeExtension() {
-    console.log('YouTube Shorts Limit Tracker extension installed');
-    
     // Initialize default settings using chrome.storage.local
     const defaultData = {
       shortsLimit: 10,
@@ -14,26 +24,22 @@
     };
     
     // Set default data if not already set
-    chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+    const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+    storage.local.get(['youtubeShortsTracker'], function(result) {
       if (!result.youtubeShortsTracker) {
-        chrome.storage.local.set({ youtubeShortsTracker: defaultData });
+        storage.local.set({ youtubeShortsTracker: defaultData });
       }
     });
-  }
-
-  // Handle extension icon click
-  function handleIconClick(tab) {
-    // Safari doesn't support setPopup, so we'll handle this differently
-    console.log('Extension icon clicked');
   }
 
   // Initialize when extension loads
   initializeExtension();
 
-  // Listen for messages from content scripts
+  // Listen for messages from content scripts and popup
   function handleMessage(request, sender, sendResponse) {
     if (request.action === 'getStats') {
-      chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+      const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+      storage.local.get(['youtubeShortsTracker'], function(result) {
         const parsedData = result.youtubeShortsTracker || {
           shortsVisited: [],
           shortsLimit: 10,
@@ -46,14 +52,72 @@
           sessionStartTime: parsedData.sessionStartTime || Date.now()
         });
       });
-      return true; // Keep message channel open for async response
+      return true;
+    }
+    
+    if (request.action === 'trackVisit') {
+      const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+      storage.local.get(['youtubeShortsTracker'], function(result) {
+        const parsedData = result.youtubeShortsTracker || {
+          shortsVisited: [],
+          shortsLimit: 10,
+          sessionStartTime: Date.now()
+        };
+        
+        const shortsVisited = parsedData.shortsVisited || [];
+        const limit = parsedData.shortsLimit || 10;
+        
+        if (!shortsVisited.includes(request.shortsId)) {
+          shortsVisited.push(request.shortsId);
+          
+          const updatedData = {
+            ...parsedData,
+            shortsVisited: shortsVisited,
+            sessionStartTime: parsedData.sessionStartTime || Date.now()
+          };
+          
+          storage.local.set({ 
+            youtubeShortsTracker: updatedData
+          }, () => {
+            if (chrome.runtime.lastError) {
+              sendResponse({ 
+                success: false, 
+                error: chrome.runtime.lastError.message
+              });
+            } else {
+              const limitReached = shortsVisited.length >= limit;
+              
+              // Notify popup about data update
+              notifyPopupUpdate();
+              
+              sendResponse({ 
+                success: true, 
+                limitReached: limitReached,
+                count: shortsVisited.length,
+                limit: limit
+              });
+            }
+          });
+        } else {
+          sendResponse({ 
+            success: true, 
+            limitReached: false,
+            count: shortsVisited.length,
+            limit: limit
+          });
+        }
+      });
+      return true;
     }
     
     if (request.action === 'updateLimit') {
-      chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+      const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+      storage.local.get(['youtubeShortsTracker'], function(result) {
         const parsedData = result.youtubeShortsTracker || {};
         parsedData.shortsLimit = request.limit;
-        chrome.storage.local.set({ youtubeShortsTracker: parsedData }, function() {
+        storage.local.set({ youtubeShortsTracker: parsedData }, function() {
+          // Notify popup about data update
+          notifyPopupUpdate();
           sendResponse({ success: true });
         });
       });
@@ -61,11 +125,14 @@
     }
     
     if (request.action === 'resetSession') {
-      chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+      const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+      storage.local.get(['youtubeShortsTracker'], function(result) {
         const parsedData = result.youtubeShortsTracker || {};
         parsedData.shortsVisited = [];
         parsedData.sessionStartTime = Date.now();
-        chrome.storage.local.set({ youtubeShortsTracker: parsedData }, function() {
+        storage.local.set({ youtubeShortsTracker: parsedData }, function() {
+          // Notify popup about data update
+          notifyPopupUpdate();
           sendResponse({ success: true });
         });
       });
@@ -74,9 +141,10 @@
   }
 
   // Safari-compatible message handling
-  if (typeof chrome !== 'undefined' && chrome.runtime) {
-    chrome.runtime.onInstalled.addListener(initializeExtension);
-    chrome.runtime.onMessage.addListener(handleMessage);
+  const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+  if (typeof runtime !== 'undefined') {
+    runtime.onInstalled.addListener(initializeExtension);
+    runtime.onMessage.addListener(handleMessage);
   }
 
   // Fallback for Safari
