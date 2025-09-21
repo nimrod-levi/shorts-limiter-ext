@@ -20,7 +20,8 @@
   function getStorageData() {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.get(['youtubeShortsTracker'], function(result) {
+        const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+        storage.local.get(['youtubeShortsTracker'], function(result) {
           const data = result.youtubeShortsTracker || {
             shortsVisited: [],
             shortsLimit: DEFAULT_LIMIT,
@@ -29,7 +30,6 @@
           resolve(data);
         });
       } catch (error) {
-        console.error('Error reading storage:', error);
         resolve({
           shortsVisited: [],
           shortsLimit: DEFAULT_LIMIT,
@@ -42,11 +42,11 @@
   function setStorageData(data) {
     return new Promise((resolve) => {
       try {
-        chrome.storage.local.set({ youtubeShortsTracker: data }, function() {
+        const storage = typeof browser !== 'undefined' ? browser.storage : chrome.storage;
+        storage.local.set({ youtubeShortsTracker: data }, function() {
           resolve(true);
         });
       } catch (error) {
-        console.error('Error writing storage:', error);
         resolve(false);
       }
     });
@@ -120,6 +120,10 @@
     document.head.appendChild(style);
   }
 
+  // Track visited shorts to prevent duplicate tracking
+  const trackedShorts = new Set();
+  let trackingInProgress = false;
+
   // Track shorts visit
   async function trackShortsVisit() {
     if (!isShortsPage()) return;
@@ -127,33 +131,44 @@
     const shortsId = getShortsId();
     if (!shortsId) return;
 
+    // Prevent duplicate tracking
+    if (trackedShorts.has(shortsId) || trackingInProgress) {
+      // Shorts already tracked or tracking in progress
+      return;
+    }
+
+    trackingInProgress = true;
+    trackedShorts.add(shortsId);
+
     try {
-      // Get current session data
-      const data = await getStorageData();
-      const shortsVisited = data.shortsVisited || [];
-      const limit = data.shortsLimit || DEFAULT_LIMIT;
-
-      // Check if this shorts ID was already visited in this session
-      if (!shortsVisited.includes(shortsId)) {
-        shortsVisited.push(shortsId);
-        
-        // Save updated data
-        await setStorageData({
-          ...data,
-          shortsVisited: shortsVisited,
-          sessionStartTime: data.sessionStartTime || Date.now()
+      // Send message to background script to track the visit
+      const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+      const response = await new Promise((resolve) => {
+        runtime.sendMessage({ 
+          action: 'trackVisit', 
+          shortsId: shortsId 
+        }, function(response) {
+          if (chrome.runtime.lastError) {
+            // Runtime error
+            resolve(null);
+          } else {
+            resolve(response);
+          }
         });
-
-        // Check if limit is reached
-        if (shortsVisited.length >= limit) {
-          showLimitPopup();
-        }
-
-        // Log for debugging
-        console.log(`Shorts visited: ${shortsVisited.length}/${limit}`);
+      });
+      
+      // Background response received
+      
+      if (response && response.limitReached) {
+        showLimitPopup();
       }
+
+      // Shorts visit tracked successfully
     } catch (error) {
-      console.error('Error tracking shorts visit:', error);
+
+      trackedShorts.delete(shortsId);
+    } finally {
+      trackingInProgress = false;
     }
   }
 
@@ -174,38 +189,5 @@
     }
   }).observe(document, { subtree: true, childList: true });
 
-  // Listen for messages from popup
-  window.addEventListener('message', async function(event) {
-    if (event.source !== window) return;
-    
-    if (event.data.type === 'GET_STATS') {
-      const data = await getStorageData();
-      window.postMessage({
-        type: 'STATS_RESPONSE',
-        data: data
-      }, '*');
-    }
-    
-    if (event.data.type === 'UPDATE_LIMIT') {
-      const data = await getStorageData();
-      data.shortsLimit = event.data.limit;
-      await setStorageData(data);
-      window.postMessage({
-        type: 'LIMIT_UPDATED',
-        success: true
-      }, '*');
-    }
-    
-    if (event.data.type === 'RESET_SESSION') {
-      const data = await getStorageData();
-      data.shortsVisited = [];
-      data.sessionStartTime = Date.now();
-      await setStorageData(data);
-      window.postMessage({
-        type: 'SESSION_RESET',
-        success: true
-      }, '*');
-    }
-  });
 
 })(); 

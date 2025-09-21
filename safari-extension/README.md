@@ -1,25 +1,27 @@
 # YouTube Shorts Limit Tracker - Safari Extension
 
-A Safari extension that tracks the number of YouTube Shorts pages visited in a session and shows a popup notification when a configurable limit is reached.
+A Safari extension that tracks YouTube Shorts visits and notifies you when you reach a configurable limit. Built with Manifest V3 and optimized for Safari's security model with persistent data storage.
 
-## Features
+## ✨ Features
 
-- **Session Tracking**: Tracks unique YouTube Shorts visited during a browser session
-- **Configurable Limit**: Set your own limit for maximum shorts per session (default: 10)
-- **Visual Progress**: See your progress with a visual progress bar
-- **Popup Notifications**: Get notified when you reach your limit
-- **Session Reset**: Reset your session to start fresh
-- **Beautiful UI**: Modern, gradient-based interface
+- **Persistent Session Tracking**: Counts unique YouTube Shorts visited with data that survives browser restarts
+- **Configurable Limits**: Set your daily limit (1-100, default: 10)
+- **Visual Progress Bar**: Color-coded progress indicator with real-time updates
+- **Smart Notifications**: Popup alerts when limit is reached
+- **Session Management**: Reset session anytime with one click
+- **Session Duration**: Track how long your current session has been active
+- **Beautiful UI**: Modern gradient-based interface with glassmorphism effects
+- **Cross-Browser Compatibility**: Works with both Chrome and Safari APIs
+- **Real-time Updates**: Live progress tracking across all tabs
 
-## Prerequisites
+## 🚀 Installation
 
-1. **macOS**: Safari extensions only work on macOS
-2. **Safari 14+**: Make sure you're using Safari 14 or later
-3. **Developer Mode**: You'll need to enable developer mode in Safari
+### Prerequisites
+- **macOS**: Safari extensions only work on macOS
+- **Safari 14+**: Make sure you're using Safari 14 or later
+- **Developer Mode**: Enable developer mode in Safari
 
-## Installation
-
-### Method 1: Extension Builder (Recommended)
+### Method 1: Safari Extension Builder (Recommended)
 
 1. **Enable Developer Mode**:
    - Open Safari
@@ -38,7 +40,7 @@ A Safari extension that tracks the number of YouTube Shorts pages visited in a s
    - **Extension Website Tab**: Add popup HTML and script
 
 4. **Add Icons**:
-   - Use the PNG files created from `icon.svg`
+   - Use the PNG files (`icon16.png`, `icon48.png`, `icon128.png`)
    - Add icons for 16x16, 48x48, and 128x128 sizes
 
 5. **Build and Install**:
@@ -54,114 +56,167 @@ A Safari extension that tracks the number of YouTube Shorts pages visited in a s
    cd ~/Desktop/YouTube-Shorts-Tracker.safariextension
    ```
 
-2. **Create Info.plist**:
-   - Copy the Info.plist content from the main `SAFARI_INSTALLATION.md`
-   - Save as `Info.plist` in the extension directory
-
-3. **Copy Files**:
+2. **Copy Files**:
    - Copy all files from this `safari-extension` folder
-   - Add the icon PNG files
+   - Ensure all files are in the correct location
 
-4. **Install**:
+3. **Install**:
    - Double-click the `.safariextension` folder
    - Click "Install" when Safari prompts
 
-## Usage
+### Verification
+- The extension icon should appear in your Safari toolbar
+- Click the icon to open the popup and verify it's working
+- Visit a YouTube Shorts page to test tracking
 
-### Basic Tracking
-- The extension automatically tracks when you visit YouTube Shorts pages
-- Each unique short is counted only once per session
-- Session data persists until you clear browser data or reset the session
+## 📱 Usage
+
+### Automatic Tracking
+- **No setup required** - the extension automatically tracks when you visit YouTube Shorts
+- **Unique counting** - each short is counted only once per session
+- **Cross-tab tracking** - counts shorts across all Safari tabs
+- **Persistent data** - data survives browser restarts until manually cleared
 
 ### Configuration
-- **Click the extension icon** to open the popup
-- **Set your daily limit** using the input field (1-100)
-- **View your progress** with the visual progress bar
-- **Reset your session** if you want to start fresh
+- **Click the extension icon** to open the popup interface
+- **Set your limit** using the number input (1-100)
+- **View progress** with the visual progress bar
+- **Reset session** anytime to start fresh
+- **Monitor session time** to see how long you've been browsing
+
+### Visual Indicators
+The progress bar changes color based on your usage:
+- 🟢 **Green**: Normal usage (0-60% of limit)
+- 🟡 **Yellow**: Approaching limit (60-80% of limit)  
+- 🔴 **Red**: Near or at limit (80%+ of limit)
 
 ### Notifications
-- When you reach your limit, a red popup will appear on YouTube
-- The popup can be dismissed manually or will auto-close after 10 seconds
-- The progress bar changes color based on usage:
-  - Green: Normal usage
-  - Yellow: 60-80% of limit
-  - Red: 80%+ of limit
+- **Limit reached popup** appears on YouTube when you hit your limit
+- **Auto-dismiss** after 10 seconds or close manually
+- **Non-intrusive** - appears in top-right corner of the page
 
-## Files Structure
+## 🏗️ Technical Architecture
 
+### Files Structure
 ```
 safari-extension/
-├── manifest.json  # Safari manifest
-├── content.js     # Safari content script
-├── background.js  # Safari background script
-├── popup.html    # Safari popup interface
-├── popup.js      # Safari popup functionality
-├── icon16.png           # Extension icon (16x16)
-├── icon48.png           # Extension icon (48x48)
-├── icon128.png          # Extension icon (128x128)
-└── README.md            # This file
+├── manifest.json          # Manifest V3 configuration
+├── background.js          # Service worker for data management
+├── content.js            # Content script for page tracking
+├── popup.html            # Extension popup interface
+├── popup.js              # Popup functionality and UI logic
+├── icon16.png            # Extension icon (16x16)
+├── icon48.png            # Extension icon (48x48)
+├── icon128.png           # Extension icon (128x128)
+└── README.md             # This documentation
 ```
 
-## How It Works
+### How It Works
 
-1. **Content Script**: Runs on YouTube Shorts pages and tracks visits
-2. **Local Storage**: Uses localStorage to persist data (survives browser restarts)
-3. **URL Tracking**: Extracts the shorts ID from the URL to track unique visits
-4. **Popup System**: Creates a notification popup when the limit is reached
-5. **Background Script**: Manages data and handles communication
+1. **Content Script** (`content.js`):
+   - Runs on YouTube Shorts pages (`https://www.youtube.com/shorts/*`)
+   - Detects page navigation and extracts shorts ID from URL
+   - Sends tracking data to background script via message passing
+   - Shows limit notification popup when needed
+   - Includes Safari-compatible error handling and fallbacks
 
-## Privacy
+2. **Background Service Worker** (`background.js`):
+   - Manages data storage using `chrome.storage.local`
+   - Handles communication between content script and popup
+   - Tracks unique shorts visits and session data
+   - Provides real-time updates to popup
+   - Includes cross-browser compatibility for Chrome and Safari APIs
 
-- All data is stored locally in your browser's localStorage
-- No data is sent to external servers
-- Data persists until you clear browser data or reset the session
-- The extension only accesses YouTube Shorts pages
+3. **Popup Interface** (`popup.html` + `popup.js`):
+   - Displays current session statistics
+   - Allows limit configuration (1-100)
+   - Shows visual progress bar with color coding
+   - Provides session reset functionality
+   - Shows session duration
+   - Includes Safari-compatible storage access with fallbacks
 
-## Troubleshooting
+4. **Storage System**:
+   - Uses `chrome.storage.local` for persistent data storage
+   - Data persists across browser restarts until manually cleared
+   - Stores: visited shorts IDs, limit setting, session start time
+   - Includes unified data structure (`youtubeShortsTracker`)
 
-**Extension not appearing?**
-- Make sure you enabled the Develop menu
-- Check that the extension was built successfully
-- Try restarting Safari
+## 🔒 Privacy & Security
 
-**Popup not working?**
-- Check the console for JavaScript errors
-- Make sure all files are in the correct location
-- Verify the Info.plist configuration
+- **Local Storage Only**: All data stored locally in Safari's storage
+- **No External Communication**: No data sent to external servers
+- **Minimal Permissions**: Only requires `storage` permission
+- **Persistent Data**: Data survives browser restarts until manually cleared
+- **YouTube Only**: Only accesses YouTube Shorts pages
+- **Cross-Browser Compatible**: Works with both Chrome and Safari APIs
+- **Open Source**: Full source code available for security review
 
-**Tracking not working?**
-- Ensure you're on a YouTube Shorts page
-- Check Safari's Privacy settings
-- Look for errors in the Safari Web Inspector console
+## 🛠️ Development
 
-**Storage issues?**
-- Safari uses localStorage instead of chrome.storage
-- Data persists until you clear browser data
-- Check Safari's Privacy settings
+### Setup Development Environment
+1. Clone or download the extension files
+2. Open Safari and enable Developer mode
+3. Use Safari Extension Builder or manual installation
+4. Configure permissions and content scripts
 
-## Development
+### Making Changes
+1. **Edit files** in your preferred code editor
+2. **In Extension Builder**: Click "Build" and "Install" to update
+3. **Manual installation**: Replace files and restart Safari
+4. **Test changes** by visiting YouTube Shorts pages
 
-To modify the extension:
+### Debugging
+- **Console logs**: Check Safari Web Inspector console for debugging info
+- **Extension popup**: Right-click extension icon → "Inspect popup"
+- **Background script**: Use Safari Web Inspector for background debugging
+- **Content script**: Use YouTube page Web Inspector console
 
-1. Edit the files as needed
-2. In Extension Builder, click **"Build"** again
-3. Click **"Install"** to update the extension
-4. Or manually replace files and restart Safari
+## 🐛 Troubleshooting
 
-## Differences from Chrome Version
+### Extension Not Appearing
+- ✅ Make sure you enabled the Develop menu in Safari
+- ✅ Check that the extension was built successfully in Extension Builder
+- ✅ Try restarting Safari
+- ✅ Verify extension is enabled in Safari preferences
+
+### Tracking Issues
+- ✅ Ensure you're on a YouTube Shorts page (URL contains `/shorts/`)
+- ✅ Check Safari's Privacy settings for storage access
+- ✅ Look for errors in the Safari Web Inspector console
+- ✅ Try visiting different YouTube Shorts pages
+
+### Popup Not Working
+- ✅ Check the console for JavaScript errors
+- ✅ Make sure all files are in the correct location
+- ✅ Verify the extension configuration in Extension Builder
+- ✅ Try resetting the session from the popup
+
+### Storage Problems
+- ✅ Safari uses `chrome.storage.local` instead of `localStorage`
+- ✅ Data persists until you clear browser data or reset session
+- ✅ Check Safari's Privacy settings for storage access
+- ✅ Verify extension has storage permissions
+
+## 📋 Requirements
+
+- **macOS**: Required for Safari extensions
+- **Safari Version**: 14+ (Manifest V3 support)
+- **Permissions**: `storage`
+- **Host Permissions**: `https://www.youtube.com/*`
+- **Content Scripts**: `https://www.youtube.com/shorts/*`
+
+## 🔄 Differences from Chrome Version
 
 | Feature | Chrome | Safari |
 |---------|--------|--------|
-| Storage | `chrome.storage.session` | `localStorage` |
-| Manifest | v3 | v2 |
-| Background | Service Worker | Background Script |
+| Storage | `chrome.storage.session` | `chrome.storage.local` |
+| Data Persistence | Session only | Persistent |
+| Manifest | V3 | V3 |
+| Background | Service Worker | Service Worker |
 | Installation | Load unpacked | Extension Builder/Manual |
 | Session Data | Auto-cleared | Persists until cleared |
+| Error Handling | Chrome-specific | Cross-browser compatible |
 
-## Icons
-
-You'll need to create the icon files (`icon16.png`, `icon48.png`, `icon128.png`) from the `icon.svg` file in the parent directory. See `ICON_INSTRUCTIONS.md` for details.
-
-## License
+## 📄 License
 
 This project is open source and available under the MIT License. 

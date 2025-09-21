@@ -148,11 +148,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial stats
     loadStats();
 
-    // Refresh stats every 5 seconds when popup is open
-    const refreshInterval = setInterval(loadStats, 5000);
+    // Listen for storage changes to update the popup in real-time
+    function setupStorageListener() {
+        try {
+            // Listen for messages from background script about data changes
+            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                if (message.action === 'dataUpdated') {
+                    loadStats();
+                }
+            });
+        } catch (error) {
+            console.error('Storage listener setup failed, using fallback');
+        }
+    }
 
-    // Clear interval when popup is closed
-    window.addEventListener('beforeunload', () => {
-        clearInterval(refreshInterval);
-    });
+    // Setup storage listener for real-time updates
+    setupStorageListener();
 }); 

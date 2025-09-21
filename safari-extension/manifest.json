@@ -4,9 +4,7 @@
   "version": "1.0",
   "description": "Tracks the number of YouTube Shorts pages visited and shows a popup when limit is reached",
   "permissions": [
-    "storage",
-    "activeTab",
-    "https://www.youtube.com/*"
+    "storage"
   ],
   "content_scripts": [
     {
@@ -16,9 +14,7 @@
     }
   ],
   "background": {
-    "scripts": ["background.js"],    
-    "service_worker": "background.js",
-    "persistent": false
+    "service_worker": "background.js"
   },    
   "action": {
     "default_popup": "popup.html",
@@ -28,8 +24,5 @@
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
-  },
-  "web_accessible_resources": [
-    "popup.html"
-  ]
+  }
 } 
