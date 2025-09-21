@@ -16,7 +16,7 @@
     return match ? match[1] : null;
   }
 
-  // Create and show popup notification
+  // Create and show popup notification - SECURE VERSION
   function showLimitPopup() {
     // Remove existing popup if any
     const existingPopup = document.getElementById('shorts-limit-popup');
@@ -24,37 +24,73 @@
       existingPopup.remove();
     }
 
-    // Create popup
+    // Create popup using secure DOM methods
     const popup = document.createElement('div');
     popup.id = 'shorts-limit-popup';
-    popup.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #ff4444;
-      color: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      z-index: 10000;
-      font-family: Arial, sans-serif;
-      max-width: 300px;
-      animation: slideIn 0.3s ease-out;
-    `;
+    
+    // Apply styles securely
+    const styles = {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      background: '#ff4444',
+      color: 'white',
+      padding: '20px',
+      borderRadius: '10px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      zIndex: '10000',
+      fontFamily: 'Arial, sans-serif',
+      maxWidth: '300px',
+      animation: 'slideIn 0.3s ease-out'
+    };
+    
+    Object.assign(popup.style, styles);
 
-    popup.innerHTML = `
-      <div style="display: flex; align-items: center; margin-bottom: 10px;">
-        <span style="font-size: 18px; font-weight: bold;">⚠️ Limit Reached!</span>
-        <button id="close-popup" style="margin-left: auto; background: none; border: none; color: white; font-size: 20px; cursor: pointer;">×</button>
-      </div>
-      <p style="margin: 0; line-height: 1.4;">
-        You've reached your maximum number of YouTube Shorts for this session. 
-        Consider taking a break!
-      </p>
-    `;
+    // Create header container
+    const headerDiv = document.createElement('div');
+    Object.assign(headerDiv.style, {
+      display: 'flex',
+      alignItems: 'center',
+      marginBottom: '10px'
+    });
+
+    // Create warning text
+    const warningSpan = document.createElement('span');
+    warningSpan.textContent = '⚠️ Limit Reached!';
+    Object.assign(warningSpan.style, {
+      fontSize: '18px',
+      fontWeight: 'bold'
+    });
+
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.id = 'close-popup';
+    closeButton.textContent = '×';
+    Object.assign(closeButton.style, {
+      marginLeft: 'auto',
+      background: 'none',
+      border: 'none',
+      color: 'white',
+      fontSize: '20px',
+      cursor: 'pointer'
+    });
+
+    // Create message paragraph
+    const messageP = document.createElement('p');
+    messageP.textContent = 'You\'ve reached your maximum number of YouTube Shorts for this session. Consider taking a break!';
+    Object.assign(messageP.style, {
+      margin: '0',
+      lineHeight: '1.4'
+    });
+
+    // Assemble popup
+    headerDiv.appendChild(warningSpan);
+    headerDiv.appendChild(closeButton);
+    popup.appendChild(headerDiv);
+    popup.appendChild(messageP);
 
     // Add close button functionality
-    popup.querySelector('#close-popup').addEventListener('click', () => {
+    closeButton.addEventListener('click', () => {
       popup.remove();
     });
 
@@ -67,31 +103,39 @@
 
     document.body.appendChild(popup);
 
-    // Add CSS animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
+    // Add CSS animation securely
+    const existingStyle = document.getElementById('shorts-limit-animation');
+    if (!existingStyle) {
+      const style = document.createElement('style');
+      style.id = 'shorts-limit-animation';
+      style.textContent = `
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
         }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+      `;
+      document.head.appendChild(style);
+    }
   }
 
-  // Track shorts visit
+  // Track shorts visit - SECURE VERSION
   async function trackShortsVisit() {
     if (!isShortsPage()) return;
 
     const shortsId = getShortsId();
     if (!shortsId) return;
 
-    console.log('🔍 Tracking shorts visit:', shortsId);
+    // Validate shorts ID format (basic validation)
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(shortsId)) {
+      console.warn('Invalid shorts ID format detected');
+      return;
+    }
 
     try {
       // Send message to background script to track the visit
@@ -100,16 +144,15 @@
         shortsId: shortsId 
       });
       
-      console.log('📊 Background response:', response);
-      
       if (response && response.limitReached) {
         showLimitPopup();
       }
 
-      // Log for debugging
-      console.log(`✅ Shorts visit tracked: ${shortsId}`);
+      // Log success without exposing sensitive data
+      console.log('✅ Shorts visit tracked successfully');
     } catch (error) {
-      console.error('❌ Error tracking shorts visit:', error);
+      console.error('❌ Error tracking shorts visit');
+      // Don't log the full error object which might contain sensitive info
     }
   }
 

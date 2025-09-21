@@ -1,12 +1,21 @@
-// Background service worker for YouTube Shorts Limit Tracker
+// Background service worker for YouTube Shorts Limit Tracker - SECURE VERSION
 chrome.runtime.onInstalled.addListener(() => {
   console.log('YouTube Shorts Limit Tracker extension installed');
   
-  // Initialize default settings
-  chrome.storage.session.set({
+  // Initialize default settings with validation
+  const defaultSettings = {
     shortsLimit: 10,
     sessionStartTime: Date.now()
-  });
+  };
+  
+  // Validate and sanitize default settings
+  if (typeof defaultSettings.shortsLimit === 'number' && 
+      defaultSettings.shortsLimit > 0 && 
+      defaultSettings.shortsLimit <= 100) {
+    chrome.storage.session.set(defaultSettings);
+  } else {
+    console.error('Invalid default settings detected');
+  }
 });
 
 // Handle extension icon click
@@ -15,8 +24,14 @@ chrome.action.onClicked.addListener((tab) => {
   chrome.action.setPopup({ popup: 'popup.html' });
 });
 
-// Listen for messages from content script
+// Listen for messages from content script - SECURE VERSION
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Validate sender is from extension context
+  if (!sender.tab) {
+    sendResponse({ error: 'Invalid sender' });
+    return;
+  }
+
   if (request.action === 'getStats') {
     chrome.storage.session.get(['shortsVisited', 'shortsLimit', 'sessionStartTime'], (result) => {
       sendResponse({
@@ -29,20 +44,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'trackVisit') {
-    console.log('🎯 Background received trackVisit:', request.shortsId);
+    // Validate shorts ID format
+    if (!request.shortsId || 
+        typeof request.shortsId !== 'string' ||
+        !/^[a-zA-Z0-9_-]{11}$/.test(request.shortsId)) {
+      sendResponse({ error: 'Invalid shorts ID' });
+      return;
+    }
     
     chrome.storage.session.get(['shortsVisited', 'shortsLimit'], (result) => {
       const shortsVisited = result.shortsVisited || [];
       const limit = result.shortsLimit || 10;
       
-      console.log('📊 Current data:', { shortsVisited, limit });
+      // Validate stored data
+      if (!Array.isArray(shortsVisited)) {
+        sendResponse({ error: 'Invalid storage data' });
+        return;
+      }
       
       // Check if this shorts ID was already visited
       if (!shortsVisited.includes(request.shortsId)) {
         shortsVisited.push(request.shortsId);
-        
-        console.log('➕ Added new shorts:', request.shortsId);
-        console.log('📈 Updated count:', shortsVisited.length);
         
         // Save updated data
         chrome.storage.session.set({ 
@@ -51,7 +73,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }, () => {
           // Check if limit is reached
           const limitReached = shortsVisited.length >= limit;
-          console.log('🎯 Limit reached:', limitReached);
           
           sendResponse({ 
             success: true, 
@@ -61,7 +82,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
         });
       } else {
-        console.log('🔄 Shorts already visited:', request.shortsId);
         sendResponse({ 
           success: true, 
           limitReached: false,
@@ -74,7 +94,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'updateLimit') {
-    chrome.storage.session.set({ shortsLimit: request.limit }, () => {
+    // Validate limit input
+    const newLimit = parseInt(request.limit);
+    if (isNaN(newLimit) || newLimit < 1 || newLimit > 100) {
+      sendResponse({ error: 'Invalid limit value' });
+      return;
+    }
+    
+    chrome.storage.session.set({ shortsLimit: newLimit }, () => {
       sendResponse({ success: true });
     });
     return true;
@@ -89,6 +116,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+  
+  // Handle unknown actions
+  sendResponse({ error: 'Unknown action' });
 });
 
 // Clear session data when browser is closed (session storage is automatically cleared)

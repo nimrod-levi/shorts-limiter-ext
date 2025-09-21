@@ -63,22 +63,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update limit
+    // Update limit - SECURE VERSION
     updateLimitBtn.addEventListener('click', function() {
         const newLimit = parseInt(limitInput.value);
-        if (newLimit > 0 && newLimit <= 100) {
-            chrome.runtime.sendMessage({ 
-                action: 'updateLimit', 
-                limit: newLimit 
-            }, (response) => {
-                if (response && response.success) {
-                    loadStats(); // Reload stats to reflect new limit
-                    showNotification('Limit updated successfully!');
-                }
-            });
-        } else {
+        
+        // Enhanced input validation
+        if (isNaN(newLimit) || newLimit < 1 || newLimit > 100) {
             showNotification('Please enter a valid limit (1-100)', 'error');
+            return;
         }
+        
+        chrome.runtime.sendMessage({ 
+            action: 'updateLimit', 
+            limit: newLimit 
+        }, (response) => {
+            if (chrome.runtime.lastError) {
+                showNotification('Failed to update limit', 'error');
+                return;
+            }
+            
+            if (response && response.success) {
+                loadStats(); // Reload stats to reflect new limit
+                showNotification('Limit updated successfully!');
+            } else if (response && response.error) {
+                showNotification('Error: ' + response.error, 'error');
+            }
+        });
     });
 
     // Reset session

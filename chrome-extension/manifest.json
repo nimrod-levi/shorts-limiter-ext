@@ -5,11 +5,10 @@
   "description": "Tracks the number of YouTube Shorts pages visited and shows a popup when limit is reached",
   "permissions": [
     "storage",
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
   "host_permissions": [
-    "https://www.youtube.com/*"
+    "https://www.youtube.com/shorts/*"
   ],
   "content_scripts": [
     {
